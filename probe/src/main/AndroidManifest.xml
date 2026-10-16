@@ -1,0 +1,14 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <queries>
+        <package android:name="com.example.vulnerable" />
+        <package android:name="com.example.hardened" />
+    </queries>
+    <application android:label="SurfaceLab Probe" android:icon="@drawable/ic_lab" android:theme="@style/LabTheme" android:allowBackup="false">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

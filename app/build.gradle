@@ -1,0 +1,39 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.example.surfacelab'
+    compileSdk 35
+    buildToolsVersion '35.0.0'
+    defaultConfig {
+        applicationId 'com.example.vulnerable'
+        minSdk 28
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+        testInstrumentationRunner 'com.example.surfacelab.LabInstrumentation'
+    }
+    flavorDimensions += 'security'
+    productFlavors {
+        vulnerable {
+            dimension 'security'
+            buildConfigField 'boolean', 'VULNERABLE', 'true'
+            manifestPlaceholders = [labScheme:'myapp', backupEnabled:'true', cleartextEnabled:'true']
+            resValue 'string', 'app_name', 'SurfaceLab'
+        }
+        hardened {
+            dimension 'security'
+            applicationId 'com.example.hardened'
+            buildConfigField 'boolean', 'VULNERABLE', 'false'
+            manifestPlaceholders = [labScheme:'safelab', backupEnabled:'false', cleartextEnabled:'false']
+            resValue 'string', 'app_name', 'SurfaceLab Hardened'
+        }
+    }
+    buildFeatures { buildConfig true }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    sourceSets.main.java.srcDir '../shared/src/main/java'
+    lint { abortOnError true }
+}
+dependencies { implementation 'androidx.core:core:1.15.0' }

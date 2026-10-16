@@ -1,0 +1,35 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <application android:name=".LabApplication" android:label="@string/app_name"
+        android:icon="@drawable/ic_lab" android:theme="@style/LabTheme"
+        android:allowBackup="${backupEnabled}" android:usesCleartextTraffic="${cleartextEnabled}"
+        android:fullBackupContent="@xml/backup_rules" android:dataExtractionRules="@xml/data_extraction_rules"
+        tools:ignore="AllowBackup">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".DeepLinkActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="${labScheme}" android:host="webview" />
+                <data android:scheme="${labScheme}" android:host="transfer" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ShareActivity" android:exported="true" />
+        <activity android:name=".TicketActivity" android:exported="true" />
+        <activity android:name=".VaultActivity" android:exported="false" />
+        <activity android:name=".AdminActivity" android:exported="false" />
+        <activity android:name=".ReceiptActivity" android:exported="false" />
+        <activity android:name=".ForensicsActivity" android:exported="false" />
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

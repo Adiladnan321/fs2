@@ -1,0 +1,2 @@
+<!-- Deliberately include synthetic private evidence in backups. -->
+<full-backup-content><include domain="file" path="." /><include domain="database" path="." /><include domain="sharedpref" path="." /><include domain="external" path="." /></full-backup-content>
