@@ -52,6 +52,44 @@ public final class LabInstrumentation extends Instrumentation {
                 boolean secure=(vault.getWindow().getAttributes().flags&android.view.WindowManager.LayoutParams.FLAG_SECURE)!=0;
                 check(secure!=BuildConfig.VULNERABLE,"Vault screen capture policy disagrees with flavor");checks.add("vault FLAG_SECURE flavor policy");
             } finally {runOnMainSync(vault::finish);}
+            check(!InstrumentationGuard.isInstrumentationPresent(), "Unexpected instrumentation in baseline process");
+            checks.add("runtime guard scans actual uninstrumented process mappings");
+            String runtimeReport=RuntimeSecret.readProtectedReport("instrumentation-fixture");
+            java.util.regex.Matcher flag=java.util.regex.Pattern.compile("FLAG\\{runtime_hook_[0-9a-f]{32}\\}").matcher(runtimeReport);
+            check(flag.find()==BuildConfig.VULNERABLE, "Runtime payload disagrees with flavor");
+            if(BuildConfig.VULNERABLE) {
+                check(RuntimePayload.acceptsFlag("instrumentation-fixture",flag.group()), "Recovered runtime flag rejected");
+                check(!RuntimePayload.acceptsFlag("different-challenge",flag.group()), "Stale challenge flag accepted");
+                check(!RuntimePayload.acceptsFlag("instrumentation-fixture","FLAG{wrong}"), "Invalid flag accepted");
+            } else check(!RuntimePayload.acceptsFlag("instrumentation-fixture","FLAG{wrong}"), "Public payload accepted a secret flag");
+            checks.add("runtime report flavor policy and challenge-specific flag validation");
+            c.getSharedPreferences("lab_progress",Context.MODE_PRIVATE).edit().remove("lab_6").commit();
+            RuntimeChallengeActivity runtime=(RuntimeChallengeActivity)startActivitySync(new Intent(c,RuntimeChallengeActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            try {
+                final String[] screen={""};runOnMainSync(()->screen[0]=text(runtime.getWindow().getDecorView()));
+                check(!screen[0].contains("FLAG{runtime_hook_"), "Runtime report leaked before operation");
+                check(!LabStore.progress(c).getBoolean("lab_6",false), "Entering runtime challenge completed the lab");
+                runOnMainSync(runtime::runProtectedOperation);
+                runOnMainSync(()->screen[0]=text(runtime.getWindow().getDecorView()));
+                check(!screen[0].contains("FLAG{runtime_hook_"), "Protected report leaked onto normal UI");
+                if(BuildConfig.VULNERABLE) {
+                    check(!LabStore.progress(c).getBoolean("lab_6",false), "Running report completed lab without flag proof");
+                    runOnMainSync(()->runtime.verifyRecoveredFlag("FLAG{wrong}"));
+                    check(!LabStore.progress(c).getBoolean("lab_6",false), "Wrong flag completed the runtime lab");
+                    java.lang.reflect.Field challenge=RuntimeChallengeActivity.class.getDeclaredField("challenge");
+                    challenge.setAccessible(true);
+                    String report=RuntimeSecret.readProtectedReport((String)challenge.get(runtime));
+                    java.util.regex.Matcher recovered=java.util.regex.Pattern.compile("FLAG\\{runtime_hook_[0-9a-f]{32}\\}").matcher(report);
+                    check(recovered.find(), "Runtime report has no flag");
+                    String answer=recovered.group();
+                    runOnMainSync(()->runtime.verifyRecoveredFlag(answer));
+                    check(LabStore.progress(c).getBoolean("lab_6",false), "Recovered runtime flag did not complete the lab");
+                } else check(screen[0].contains("No Lab 6 secret"), "Hardened runtime comparison omitted public-only result");
+                checks.add("runtime UI hides report and verifies actual recovered flag before completion");
+                String observation=LabStore.read(new java.io.File(c.getFilesDir(),"runtime-challenge.json"));
+                check(observation.contains(BuildConfig.VULNERABLE?"flag-recovered":"public-receipt-only") && !observation.contains("FLAG{"), "Runtime evidence leaked answer or lost status");
+                checks.add("runtime observation records status without disclosing flag");
+            } finally {runOnMainSync(runtime::finish);}
             results.putString("stream","\nPASS ("+checks.size()+" checks): "+String.join(", ",checks)+"\n");
             finish(Activity.RESULT_OK,results);
         } catch(Throwable e) {
